@@ -1,0 +1,11 @@
+---
+- name: "Docker | Auth to registry | Login"
+  community.docker.docker_login:
+    registry_url: "{{ item.keys() | first }}"
+    username: "{{ item[item.keys() | first].login }}"
+    password: "{{ item[item.keys() | first].pass }}"
+    reauthorize: true
+  loop: "{{ docker_registry_auth }}"
+  loop_control:
+    label: "{{ item.keys() | first }}"
+  no_log: true

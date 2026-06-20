@@ -1,0 +1,13 @@
+---
+
+
+- name: "Common | Update | Update node packages and repos"
+  apt:
+    upgrade: full
+    update_cache: true
+
+- name: "Common | Install | Install packages"
+  package:
+    name: "{{ common_packages }}"
+    state: "present"
+  ignore_errors: "{{ ansible_check_mode }}"

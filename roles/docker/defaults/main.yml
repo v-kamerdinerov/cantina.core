@@ -1,3 +1,51 @@
 ---
-# default variables for role: docker
-...
+# Edition can be one of: 'ce' (Community Edition) or 'ee' (Enterprise Edition).
+docker_edition: 'ce'
+docker_packages:
+  - "docker-{{ docker_edition }}"
+  - "docker-{{ docker_edition }}-cli"
+  - "docker-{{ docker_edition }}-rootless-extras"
+  - "containerd.io"
+docker_packages_state: present
+
+# Service options.
+docker_service_manage: true
+docker_service_state: started
+docker_service_enabled: true
+docker_restart_handler_state: restarted
+
+# Docker Compose Plugin options.
+docker_install_compose_plugin: true
+docker_compose_package: docker-compose-plugin
+docker_compose_package_state: present
+
+# Docker Compose options.
+docker_install_compose: true
+docker_compose_version: "v5.0.2"
+
+
+# A list of users who will be added to the docker group.
+docker_users:
+  - ubuntu
+
+# Docker daemon options as a dict
+docker_daemon_options:
+#  storage-driver: "overlay2"
+  log-opts:
+    max-size: "500m"
+    max-file: "2"
+  log-driver: "json-file"
+
+# docker internal networks
+docker_internal_networks:
+  - "caddy_network"
+  - "svc_internal_network"
+
+# docker auth setup
+docker_registry_auth:
+  - ghcr.io:
+      login: "v.kamerdinerov"
+      pass: "{{ vault_docker_ghcr_token }}"
+  - registry.hub.docker.com:
+      login: "vladkmrdnv"
+      pass: "{{ vault_docker_dockerhub_token }}"

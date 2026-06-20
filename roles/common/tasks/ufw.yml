@@ -1,0 +1,31 @@
+---
+
+- name: "Common| UFW | Reset all rules"
+  community.general.ufw:
+    state: reset
+
+- name: "Common | UFW | Allow ports per node"
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items:
+    - "{{ common_open_ports }}"
+
+- name: "Common || UFW | Limit ssh connections"
+  community.general.ufw:
+    rule: limit
+    port: "{{ item }}"
+  with_items:
+    - "{{ change_sshd_port_configured_port }}"
+
+- name: "Common | UFW | Deny outbound traffic to private networks"
+  community.general.ufw:
+    rule: deny
+    direction: out
+    to_ip: "{{ item }}"
+  with_items:
+    - "{{ common_closed_networks }}"
+
+- name: "Common | UFW | Enable firewall service"
+  community.general.ufw:
+    state: enabled

@@ -1,0 +1,71 @@
+---
+# tasks/update_docker_images.yml
+
+- name: "Docker | Update Docker images for services"
+  tags: update_images
+  block:
+    - name: "Docker | Pull latest Docker images"
+      community.docker.docker_compose_v2:
+        project_src: "{{ item }}"
+        pull: always
+      loop: "{{ docker_services_to_update }}"
+      when: docker_services_to_update is defined
+      register: pull_result
+
+    - name: "Docker | Display pull results"
+      ansible.builtin.debug:
+        msg: "Service: {{ item.item }} - Changed: {{ item.changed }}"
+      loop: "{{ pull_result.results }}"
+      when: pull_result is defined and pull_result.results is defined
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: "Docker | Recreate containers with new images (only if pulled)"
+      community.docker.docker_compose_v2:
+        project_src: "{{ item.item }}"
+        state: present
+        recreate: auto
+      loop: "{{ pull_result.results }}"
+      when:
+        - pull_result is defined
+        - pull_result.results is defined
+        - item.changed | default(false)
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: "Docker | Remove dangling Docker images"
+      community.docker.docker_prune:
+        images: true
+        images_filters:
+          dangling: true
+      when:
+        - docker_services_to_update is defined
+        - pull_result.changed | default(false)
+
+    - name: "Docker | Display cleanup results"
+      ansible.builtin.debug:
+        msg: "Updated {{ pull_result.results | selectattr('changed', 'equalto', true) | list | length }} service(s). Dangling images removed."
+      when: pull_result is defined and pull_result.results is defined
+
+    - name: "Docker | Set updated services list"
+      ansible.builtin.set_fact:
+        updated_services: "{{ pull_result.results | selectattr('changed', 'equalto', true) | map(attribute='item') | list }}"
+      when: pull_result is defined and pull_result.results is defined
+
+    - name: "Docker | Notify Telegram about successful update"
+      community.general.telegram:
+        token: "{{ vault_telegram_bot_token }}"
+        api_args:
+          chat_id: "{{ vault_telegram_chat_id }}"
+          parse_mode: "markdown"
+          text: |
+            ✅ *Docker Update Complete*
+            🖥 Host: `{{ inventory_hostname }}.{{ main_domain }}`
+            📅 Date: `{{ ansible_date_time.date }}`
+            🕐 Time: `{{ ansible_date_time.time }}`
+            📦 Updated services:
+            {% for service in updated_services %}  • {{ service | basename }}
+            {% endfor %}
+      when:
+        - updated_services is defined
+        - updated_services | length > 0

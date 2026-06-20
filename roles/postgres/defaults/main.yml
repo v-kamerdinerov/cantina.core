@@ -1,3 +1,12 @@
 ---
-# default variables for role: postgres
-...
+postgres_data_dir: /opt/postgres
+
+postgres_init_user: root
+postgres_port: 5433
+
+
+postgres_databases: []
+
+postgres_container_name: "postgres-standalone"
+
+postgres_container_image: "postgres:15-alpine"

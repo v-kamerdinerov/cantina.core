@@ -1,3 +1,35 @@
 ---
-# internal variables for role: postgres
-...
+# Базовые множители для расчета параметров PostgreSQL
+
+# Профили нагрузки PostgreSQL
+postgres_workload_type: "mixed"  # oltp, olap, mixed
+
+# Настройки для разных типов нагрузки
+postgres_tuning_profiles:
+  oltp:
+    shared_buffers_percent: 0.25
+    effective_cache_size_percent: 0.75
+    work_mem_mb: 4
+    max_connections: 200
+    maintenance_work_mem_percent: 0.05
+  olap:
+    shared_buffers_percent: 0.25
+    effective_cache_size_percent: 0.75
+    work_mem_mb: 50
+    max_connections: 50
+    maintenance_work_mem_percent: 0.10
+  mixed:
+    shared_buffers_percent: 0.25
+    effective_cache_size_percent: 0.60
+    work_mem_mb: 10
+    max_connections: 100
+    maintenance_work_mem_percent: 0.05
+
+# Ограничения
+postgres_maintenance_work_mem_max_mb: 2048
+
+# Docker resource limits (проценты от доступных ресурсов)
+postgres_docker_cpu_limit_percent: 0.75
+postgres_docker_cpu_reservation_percent: 0.50
+postgres_docker_memory_limit_percent: 0.75
+postgres_docker_memory_reservation_percent: 0.50

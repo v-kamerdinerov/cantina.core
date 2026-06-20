@@ -1,4 +1,36 @@
 ---
-# tasks for role: postgres
-# TODO: наполни своими задачами
-...
+- name: "postgres | Create app directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ postgres_data_dir }}"
+
+- name: "postgres | Tuning DB params"
+  include_tasks: tuning.yml
+
+- name: "postgres | Template Docker compose and env configs"
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ postgres_data_dir }}/{{ item.dst }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - {src: docker-compose.yml.j2, dst: docker-compose.yml, mode: "0644"}
+    - {src: env.j2, dst: .env, mode: "0644"}
+  notify: restart postgres
+
+- name:  "postgres | Start services with docker-compose"
+  community.docker.docker_compose_v2:
+    project_src: "{{ postgres_data_dir }}"
+    files:
+      - "docker-compose.yml"
+    state: present
+
+
+- name: "postgres | Bootstrap"
+  include_tasks: bootstrap.yml
+
+- name: "postgres | Init user databases"
+  include_tasks: add_db.yml
+  loop: "{{ postgres_databases }}"

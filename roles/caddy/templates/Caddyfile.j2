@@ -1,0 +1,9 @@
+{% for service in caddy_services %}
+{{ service.domain }} {
+    reverse_proxy {{ service.upstream }}
+{% if service.extra_config is defined %}
+    {{ service.extra_config | indent(4) }}
+{% endif %}
+}
+
+{% endfor %}

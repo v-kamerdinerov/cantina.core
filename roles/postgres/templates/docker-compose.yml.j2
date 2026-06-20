@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: {{ postgres_container_image }}
+    restart: unless-stopped
+    container_name: {{ postgres_container_name }}
+    env_file: .env
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections={{ pg_max_connections }}"
+      - "-c"
+      - "shared_buffers={{ pg_shared_buffers_mb }}MB"
+      - "-c"
+      - "effective_cache_size={{ pg_effective_cache_size_mb }}MB"
+      - "-c"
+      - "work_mem={{ pg_work_mem_mb }}MB"
+      - "-c"
+      - "maintenance_work_mem={{ pg_maintenance_work_mem_mb }}MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+    volumes:
+      - postgres-data-standalone:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - svc_internal_network
+    ports:
+      - "{{ ('127.0.0.1:' if (postgres_expose_external_port | default(false) | bool) else '') ~ postgres_port ~ ':5432' }}"
+    deploy:
+      resources:
+        limits:
+          cpus: '{{ docker_cpu_limit }}'
+          memory: {{ docker_memory_limit_gb }}G
+        reservations:
+          cpus: '{{ docker_cpu_reservation }}'
+          memory: {{ docker_memory_reservation_gb }}G
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -p 5432 -U {{ postgres_init_user }}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+volumes:
+  postgres-data-standalone:
+    driver: local
+
+networks:
+  svc_internal_network:
+    external: true

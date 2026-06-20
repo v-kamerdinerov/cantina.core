@@ -1,3 +1,7 @@
 ---
-# internal variables for role: common
-...
+common_ca_certificates_handler: /usr/sbin/update-ca-certificates
+common_ca_certificates_local_dir: /usr/local/share/ca-certificates
+
+common_hosts_entries:
+  - ip: "149.154.167.220"
+    host: "api.telegram.org"

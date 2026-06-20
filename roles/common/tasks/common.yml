@@ -1,0 +1,37 @@
+---
+
+- name: "Common | Set timezone to {{ common_timezone }}"
+  community.general.timezone:
+    name: "{{ common_timezone }}"
+
+- name: "Common | Set hostname"
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ common_domain }}.local"
+  tags: hosts
+
+- name: "Common | Fix /etc/hosts removing the old hostname"
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.0.1"
+    state: present
+    line: "127.0.0.1 {{ inventory_hostname }}.{{ common_domain }}.local {{ common_domain }}"
+  tags: hosts
+
+- name: "Common | Ensure custom hosts entries exist"
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "^{{ item.ip | regex_escape }}\\s+{{ item.host | regex_escape }}"
+    line: "{{ item.ip }} {{ item.host }}"
+    state: present
+  loop: "{{ common_hosts_entries }}"
+  tags: hosts
+
+- name: "Common | Schedule journalctl cleanup every 5 days"
+  cron:
+    name: "Clean journalctl logs to 500MB"
+    minute: "0"
+    hour: "3"
+    day: "*/5"
+    job: "/usr/bin/journalctl --vacuum-size=500M"
+    user: root
+    state: present

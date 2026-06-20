@@ -1,0 +1,48 @@
+---
+
+- name: "postgres | Gather facts about the system"
+  setup:
+    gather_subset:
+      - hardware
+      - processor
+
+- name: "postgres | Calculate PostgreSQL tuning parameters based on system resources"
+  set_fact:
+    total_memory_mb: "{{ (ansible_memtotal_mb * 0.95) | int }}"
+    current_profile: "{{ postgres_tuning_profiles[postgres_workload_type] }}"
+
+- name: "postgres | Calculate all PostgreSQL and Docker parameters"
+  set_fact:
+    pg_shared_buffers_mb: "{{ (total_memory_mb * current_profile.shared_buffers_percent) | int }}"
+    pg_effective_cache_size_mb: "{{ (total_memory_mb * current_profile.effective_cache_size_percent) | int }}"
+    pg_work_mem_mb: "{{ current_profile.work_mem_mb }}"
+    pg_maintenance_work_mem_mb: "{{ [(total_memory_mb * current_profile.maintenance_work_mem_percent) | int, postgres_maintenance_work_mem_max_mb] | min }}"
+    pg_max_connections: "{{ current_profile.max_connections }}"
+    docker_cpu_limit: "{{ (ansible_processor_vcpus * postgres_docker_cpu_limit_percent) | round(1, 'floor') }}"
+    docker_cpu_reservation: "{{ (ansible_processor_vcpus * postgres_docker_cpu_reservation_percent) | round(1, 'floor') }}"
+    docker_memory_limit_gb: "{{ ((total_memory_mb * postgres_docker_memory_limit_percent) / 1024) | round(0, 'floor') | int }}"
+    docker_memory_reservation_gb: "{{ ((total_memory_mb * postgres_docker_memory_reservation_percent) / 1024) | round(0, 'floor') | int }}"
+
+- name: "postgres | Display calculated PostgreSQL tuning parameters"
+  debug:
+    msg: |
+      "========================================="
+      "PostgreSQL Tuning Parameters"
+      "========================================="
+      "Workload Type: {{ postgres_workload_type }}"
+      "Total Memory: {{ total_memory_mb }} MB"
+      "Total CPUs: {{ ansible_processor_vcpus }}"
+      "-----------------------------------------"
+      "PostgreSQL Configuration:"
+      "  max_connections: {{ pg_max_connections }}"
+      "  shared_buffers: {{ pg_shared_buffers_mb }}MB"
+      "  effective_cache_size: {{ pg_effective_cache_size_mb }}MB"
+      "  work_mem: {{ pg_work_mem_mb }}MB"
+      "  maintenance_work_mem: {{ pg_maintenance_work_mem_mb }}MB"
+      "-----------------------------------------"
+      "Docker Resource Limits:"
+      "  CPU limit: {{ docker_cpu_limit }}"
+      "  CPU reservation: {{ docker_cpu_reservation }}"
+      "  Memory limit: {{ docker_memory_limit_gb }}G"
+      "  Memory reservation: {{ docker_memory_reservation_gb }}G"
+      "========================================="

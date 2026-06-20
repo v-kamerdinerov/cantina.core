@@ -1,0 +1,79 @@
+{% set secure_projects = projects.items() | selectattr('1.secure') | list %}
+{
+    order authenticate before respond
+    order authorize before basicauth
+
+    security {
+            oauth identity provider github {{ github_oauth_client_id }} {{ github_oauth_client_secret }}
+            authentication portal myportal {
+            crypto default token lifetime 3600
+            enable identity provider github
+            crypto key sign-verify {{ vault_caddy_jwt_secret }}
+            cookie domain {{ main_domain }}
+            ui {
+                links {
+                {% for name, project in projects.items() if project.secure %}
+                "{{ name }}" "https://{{ project.project_subdomain }}" icon "las la-user"
+                {% endfor %}
+                }
+            }
+
+            transform user {
+                match realm github
+                match sub {{ github_allow_list }}
+                action add role authp/admin
+            }
+        }
+
+        authorization policy mypolicy {
+            set auth url https://{{ base_auth_domain }}/oauth2/github
+            crypto key sign-verify {{ vault_caddy_jwt_secret }}
+            allow roles authp/admin
+            validate bearer header
+            inject headers with claims
+        }
+    }
+}
+
+https://{{ base_auth_domain }} {
+    log {
+        output file /var/log/caddy/caddy-auth.log {
+            roll_size 10MiB
+            roll_keep 10
+            roll_keep_for 24h
+        }
+    }
+    authenticate with myportal
+    {% if secure_projects | length == 1 %}
+    route /portal {
+        redir https://{{ secure_projects[0][1].project_subdomain }} 302
+    }
+    {% endif %}
+}
+
+
+{% for project, cfg in projects.items() %}
+{{ cfg.project_subdomain }} {
+
+    log {
+        output file /var/log/caddy/{{cfg.log_file}}.log {
+            roll_size 10MiB
+            roll_keep 10
+            roll_keep_for 24h
+        }
+    }
+
+    {% for path in cfg.paths | d('') %}
+    handle {{ path }} {
+        reverse_proxy {{ cfg.backend }}
+    }
+    {% endfor %}
+
+    handle {
+        {% if cfg.secure %}
+        authorize with mypolicy
+        {% endif %}
+        reverse_proxy {{ cfg.frontend }}
+    }
+}
+{% endfor %}

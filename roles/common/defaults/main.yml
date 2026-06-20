@@ -1,3 +1,126 @@
 ---
-# default variables for role: common
-...
+
+common_packages:
+  - "net-tools"
+  - "curl"
+  - "wget"
+  - "ca-certificates"
+  - "jq"
+  - "ufw"
+  - "python3-psycopg2"
+
+# Timezone for server
+common_timezone: "Europe/Moscow"
+
+# Main domain for node
+common_domain: "infra"
+
+# Timeout for rebooting
+common_reboot_timeout: 300
+
+# System limit user
+common_system_domain: "*"
+
+# System limits
+common_limits:
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'core', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'data', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'fsize', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'nofile', value: "1048576" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'memlock', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'rss', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'nproc', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'msgqueue', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: 'hard', limit_item: 'stack', value: "65536" }
+  - { domain: "{{ common_system_domain }}", type: 'soft', limit_item: 'stack', value: "32768" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'cpu', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'locks', value: "unlimited" }
+  - { domain: "{{ common_system_domain }}", type: '-', limit_item: 'as', value: "unlimited" }
+
+common_sysctl_roles_tuning_overrides:
+  # -----------------------------
+  # Filesystem / limits
+  # -----------------------------
+
+  # Maximum open file descriptors
+  - name: fs.file-max
+    value: "1000000"
+
+  # Required for Java (Metabase)
+  - name: vm.max_map_count
+    value: "262144"
+
+  # -----------------------------
+  # Memory management
+  # -----------------------------
+
+  # Reduce swap aggressiveness (important for 4GB VPS)
+  - name: vm.swappiness
+    value: "10"
+
+  # Allow memory overcommit (Postgres / Java friendly)
+  - name: vm.overcommit_memory
+    value: "1"
+
+  # -----------------------------
+  # Network tuning
+  # -----------------------------
+
+  # Maximum network device backlog
+  - name: net.core.netdev_max_backlog
+    value: "16384"
+
+  # Maximum backlog of pending connections
+  - name: net.core.somaxconn
+    value: "65535"
+
+  # Maximum SYN backlog
+  - name: net.ipv4.tcp_max_syn_backlog
+    value: "8192"
+
+  # TCP keepalive (avoid dead connections)
+  - name: net.ipv4.tcp_keepalive_time
+    value: "600"
+
+  - name: net.ipv4.tcp_keepalive_intvl
+    value: "60"
+
+  - name: net.ipv4.tcp_keepalive_probes
+    value: "5"
+
+  # -----------------------------
+  # Socket buffers
+  # -----------------------------
+
+  # Maximum socket option memory buffers
+  - name: net.core.optmem_max
+    value: "65535"
+
+  # TCP receive buffer (min / default / max)
+  - name: net.ipv4.tcp_rmem
+    value: "8192 1048576 16777216"
+
+# Default for firewall
+common_open_ports:
+  - "80"
+  - "443"
+  - "45876"
+common_closed_networks:
+# private networks
+  - "10.0.0.0/8"
+#  - "172.16.0.0/12"
+  - "192.168.0.0/16"
+# docs and examples
+  - "192.0.2.0/24"
+  - "198.51.100.0/24"
+  - "203.0.113.0/24"
+# CGNAT range
+  - "100.64.0.0/10"
+# link local range
+  - "169.254.0.0/16"
+# multicast
+  - "224.0.0.0/4"
+# reserver range
+  - "240.0.0.0/4"
+# IANA test range
+  - "198.18.0.0/15"

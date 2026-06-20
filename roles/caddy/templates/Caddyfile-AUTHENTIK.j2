@@ -1,0 +1,92 @@
+{
+    email {{ smtp_user }}
+}
+
+(authentik-forward-auth) {
+
+    forward_auth {{ caddy_authentik_server_container_name }}:{{ caddy_authentik_server_container_port }} {
+
+        uri /outpost.goauthentik.io/auth/caddy
+
+        copy_headers {
+
+            X-Authentik-Username
+            X-Authentik-Groups
+            X-Authentik-Email
+            X-Authentik-Uid
+            X-Authentik-Jwt
+            X-Authentik-Name
+        }
+    }
+}
+
+(common-security) {
+
+    encode gzip zstd
+
+    header {
+
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        X-Frame-Options "DENY"
+
+        X-Content-Type-Options "nosniff"
+
+        Referrer-Policy "strict-origin-when-cross-origin"
+
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+        -Server
+    }
+}
+
+https://{{ base_auth_domain }} {
+
+    import common-security
+
+    log {
+        output file /var/log/caddy/caddy-auth.log {
+            roll_size 10MiB
+            roll_keep 10
+            roll_keep_for 24h
+        }
+    }
+
+    reverse_proxy {{ caddy_authentik_server_container_name }}:{{ caddy_authentik_server_container_port }}
+}
+
+{% for project, cfg in projects.items() %}
+
+{{ cfg.project_subdomain }} {
+
+    import common-security
+
+    log {
+        output file /var/log/caddy/{{ cfg.log_file }}.log {
+            roll_size 10MiB
+            roll_keep 10
+            roll_keep_for 24h
+        }
+    }
+
+    {% for path in cfg.paths | d([]) %}
+
+    handle {{ path }} {
+        reverse_proxy {{ cfg.backend }}
+    }
+
+    {% endfor %}
+
+    handle {
+
+        {% if cfg.access_mode == 'forward_auth' %}
+        import authentik-forward-auth
+        {% endif %}
+
+        reverse_proxy {{ cfg.frontend }} {
+            flush_interval -1
+        }
+    }
+}
+
+{% endfor %}

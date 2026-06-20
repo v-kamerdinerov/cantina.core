@@ -1,0 +1,29 @@
+---
+- name: "postgres | Wait for PostgreSQL port"
+  ansible.builtin.wait_for:
+    host: localhost
+    port: "{{ postgres_port }}"
+    timeout: 60
+    state: started
+
+- name: "postgres | Wait for PostgreSQL to be ready"
+  community.docker.docker_container_exec:
+    container: "{{ postgres_container_name }}"
+    command: /bin/bash -c "pg_isready -h 127.0.0.1 -p 5432 -U {{ postgres_init_user }}"
+  register: result
+  until: result.rc == 0
+  retries: 30
+  delay: 2
+  check_mode: false
+
+- name: "postgres | Ensure postgres role exists (compat)"
+  community.postgresql.postgresql_user:
+    login_host: 127.0.0.1
+    login_port: "{{ postgres_port }}"
+    login_user: "{{ postgres_init_user }}"
+    login_password: "{{ vault_postgres_standalone_pg_password }}"
+    name: postgres
+    password: "{{ vault_postgres_standalone_pg_password }}"
+    role_attr_flags: SUPERUSER,LOGIN
+    state: present
+  no_log: true

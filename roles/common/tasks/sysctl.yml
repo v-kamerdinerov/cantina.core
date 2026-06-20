@@ -1,0 +1,24 @@
+---
+
+- name: "Common | Sysctl | Override sysctl params with host/group ones"
+  set_fact:
+    sysctl_tuning: "{{ [item] + sysctl_tuning | d({}) | rejectattr('name', 'equalto', item.name) | list }}"
+  with_items: "{{ common_sysctl_roles_tuning_overrides }}"
+  when: common_sysctl_roles_tuning_overrides is defined
+  tags: sysctl
+
+
+- name: "Common | Sysctl | Create node sysctl"
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/50-network.conf
+    sysctl_set: true
+    ignoreerrors: "{{ item.ignoreerrors | default('no') }}"
+    reload: true
+  with_items:
+    - "{{ sysctl_tuning }}"
+  tags: sysctl
+  loop_control:
+    label: "{{ item.name }} = {{ item.value }}"

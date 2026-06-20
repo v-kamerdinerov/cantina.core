@@ -1,3 +1,16 @@
 ---
-# default variables for role: caddy
-...
+caddy_data_dir: /opt/caddy
+caddy_services: []
+#  - domain: "api.example.com"
+#    upstream: "api:8080"
+#    extra_config: |
+#      encode gzip
+#      header {
+#        X-Custom-Header "value"
+#      }
+
+caddy_image_name: "{{ 'thekevjames/caddy-security:latest' if sso_provider | d('') == 'github' else 'caddy:alpine' }}"
+
+
+caddy_authentik_server_container_name: "authentik-server"
+caddy_authentik_server_container_port: "9000"

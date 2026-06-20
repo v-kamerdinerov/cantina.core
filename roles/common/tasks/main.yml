@@ -1,4 +1,19 @@
 ---
-# tasks for role: common
-# TODO: наполни своими задачами
-...
+- name: SSH
+  include_tasks: ssh_port.yml
+  tags: ssh
+- name: Common
+  include_tasks: common.yml
+  tags: common
+- name: Limits
+  include_tasks: limits.yml
+  tags: limits
+- name: Install
+  include_tasks: install.yml
+  tags: install
+- name: Sysctl
+  include_tasks: sysctl.yml
+  tags: sysctl
+- name: Firewall
+  include_tasks: ufw.yml
+  tags: firewall
