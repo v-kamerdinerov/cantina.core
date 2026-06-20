@@ -1,0 +1,46 @@
+---
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: build & release collection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ansible-core
+        run: pip install --use-pep517 ansible-core
+
+      - name: Derive version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set version in galaxy.yml
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.version }}/" galaxy.yml
+          grep '^version:' galaxy.yml
+
+      - name: Install collection dependencies
+        run: ansible-galaxy collection install -r requirements.yml
+
+      - name: Build collection
+        run: ansible-galaxy collection build --output-path ./dist --force
+
+      - name: Create GitHub Release with artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          generate_release_notes: true
+...

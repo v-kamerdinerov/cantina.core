@@ -1,0 +1,34 @@
+---
+namespace: cantina
+name: core
+description: Cantina Core — базовые инфраструктурные роли для домашнего пет-проекта
+readme: README.md
+license:
+  - MIT
+authors:
+  - v.kamerdinerov
+tags:
+  - infrastructure
+  - docker
+  - caddy
+  - postgres
+  - common
+repository: https://github.com/v-kamerdinerov/cantina.core
+homepage: https://github.com/v-kamerdinerov/cantina.core
+issues: https://github.com/v-kamerdinerov/cantina.core/issues
+dependencies:
+  "community.general": ">=2.4.0"
+  "community.docker": ">=3.0.0"
+version: 0.0.0  # генерируется в CI на основе git-тега
+build_ignore:
+  - .DS_Store
+  - '*.tar.gz'
+  - '*.tar'
+  - '.git*'
+  - '.venv*'
+  - '.github'
+  - 'tools'
+  - 'tests'
+  - '.yamllint.yml'
+  - 'requirements*.txt'
+...
