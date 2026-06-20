@@ -1,12 +1,14 @@
 # Cantina Core collection
 
-`cantina.core` — базовая ansible-коллекция домашнего пет-проекта. Содержит
+`cantina.core` — базовая ansible-коллекция личных. Содержит
 фундаментальные роли, на которые опираются прикладные сервисы из
 [`cantina.apps`](https://github.com/v-kamerdinerov/cantina.apps).
 
 > ### Почему cantina?
 > Потому что инфраструктура — это бар, куда стекаются все сервисы. А `core` —
 > это барная стойка, без которой остальное просто негде поставить.
+
+![cantina](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRist7P26lazqlmuAswGevo8LPRelcgM7Scgz1oqJg5wKc2eWGRsGCacgI&s=10)
 
 ## Включённые роли
 
