@@ -24,7 +24,7 @@ services:
     networks:
       - svc_internal_network
     ports:
-      - "{{ ('127.0.0.1:' if (postgres_expose_external_port | default(false) | bool) else '') ~ postgres_port ~ ':5432' }}"
+      - "{{ ('' if (postgres_expose_external_port | default(false) | bool) else '127.0.0.1:') ~ postgres_port ~ ':5432' }}"
     deploy:
       resources:
         limits:
