@@ -8,7 +8,7 @@
 > Потому что инфраструктура — это бар, куда стекаются все сервисы. А `core` —
 > это барная стойка, без которой остальное просто негде поставить.
 
-![cantina](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRist7P26lazqlmuAswGevo8LPRelcgM7Scgz1oqJg5wKc2eWGRsGCacgI&s=10)
+![cantina](https://news.fit.edu/wp-content/uploads/2015/12/cantina_denizens_1.jpg)
 
 ## Включённые роли
 
