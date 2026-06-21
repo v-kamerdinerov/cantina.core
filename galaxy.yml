@@ -1,7 +1,7 @@
 ---
 namespace: cantina
 name: core
-description: Cantina Core — базовые инфраструктурные роли для домашнего пет-проекта
+description: Cantina Core — базовая ansible-коллекция ролей для личных проектов.
 readme: README.md
 license:
   - MIT
@@ -31,4 +31,5 @@ build_ignore:
   - 'tests'
   - '.yamllint.yml'
   - 'requirements*.txt'
+  - 'roles/README.md'
 ...
