@@ -26,7 +26,7 @@
 ```yaml
 # requirements.yml
 collections:
-  - name: https://github.com/v-kamerdinerov/cantina.core/releases/download/v0.1.0/cantina-core-0.1.0.tar.gz
+  - name: https://github.com/v-kamerdinerov/cantina.core/releases/download/v0.0.3/cantina-core-0.0.3.tar.gz
 ```
 
 ```bash
@@ -88,12 +88,12 @@ ansible-galaxy collection build --output-path ./dist --force
 ### Как выпустить версию
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.0.3
+git push origin v0.0.3
 ```
 
 GitHub Actions сам соберёт коллекцию и создаст релиз с артефактом
-`cantina-core-0.1.0.tar.gz`.
+`cantina-core-0.0.3.tar.gz`.
 
 ## Лицензия
 
