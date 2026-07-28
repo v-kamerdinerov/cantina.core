@@ -1,0 +1,24 @@
+---
+# Создание БД/пользователей на managed PostgreSQL инстансе.
+# Переиспользует add_db.yml, но с параметрами подключения managed-инстанса
+# вместо локального docker-контейнера. Не вызывается из tasks/main.yml,
+# используется отдельным плейбуком, например:
+#
+#   - import_role:
+#       name: cantina.core.postgres
+#       tasks_from: managed_add_db
+#
+- name: "postgres | managed_add_db | Install python3-psycopg2 (required by community.postgresql modules)"
+  ansible.builtin.apt:
+    name: python3-psycopg2
+    state: present
+    update_cache: true
+
+- name: "postgres | managed_add_db | Init databases on managed instance"
+  include_tasks: add_db.yml
+  loop: "{{ postgres_managed_databases }}"
+  vars:
+    postgres_login_host: "{{ postgres_managed_host }}"
+    postgres_login_port: "{{ postgres_managed_port }}"
+    postgres_login_user: "{{ postgres_managed_user }}"
+    postgres_login_password: "{{ vault_postgres_managed_password }}"

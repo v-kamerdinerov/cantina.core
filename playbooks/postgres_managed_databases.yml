@@ -1,0 +1,41 @@
+---
+# Пример плейбука для создания БД/пользователей на managed PostgreSQL
+# инстансе (RDS/Cloud SQL/Yandex MDB/...), без деплоя docker-контейнера.
+#
+# Роль cantina.core.postgres сама эту таску не вызывает из tasks/main.yml -
+# только через явный import_role/include_role с tasks_from.
+#
+# Требования на хосте-раннере:
+#   - сетевой доступ до managed-инстанса
+#   - python3-psycopg2 ставится самой таской managed_add_db
+#
+# Запуск:
+#   ansible-playbook cantina.core.postgres_managed_databases \
+#     -i inventories/hosts.yml --limit backup_runner
+#
+# Секреты (пароль администратора managed-инстанса, пароли создаваемых
+# пользователей) должны приезжать из vault, а не лежать в этом плейбуке:
+#   vault_postgres_managed_password       # пароль postgres_managed_user
+#   vault_myapp_db_password               # пароль конкретной БД, например
+#
+- name: "Создание БД на managed PostgreSQL инстансе"
+  hosts: "postgres_managed_backup"
+  gather_facts: false
+  become: true
+  vars:
+    postgres_managed_host: "my-managed-pg.example.com"
+    postgres_managed_port: 5432
+    postgres_managed_user: "postgres"
+    postgres_managed_databases:
+      - db: "myapp"
+        user: "myapp"
+        password: "{{ vault_myapp_db_password }}"
+      - db: "another_service"
+        user: "another_service"
+        password: "{{ vault_another_service_db_password }}"
+  tasks:
+    - name: "Создать БД и пользователей на managed-инстансе"
+      import_role:
+        name: cantina.core.postgres
+        tasks_from: managed_add_db
+      tags: postgres_managed_databases

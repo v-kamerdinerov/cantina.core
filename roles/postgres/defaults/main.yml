@@ -10,3 +10,50 @@ postgres_databases: []
 postgres_container_name: "postgres-standalone"
 
 postgres_container_image: "postgres:15-alpine"
+
+# --- Параметры подключения для add_db.yml ---
+# По умолчанию указывают на локальный docker-контейнер standalone postgres.
+# Для managed-инстанса переопределяются в tasks/managed_add_db.yml.
+postgres_login_host: "127.0.0.1"
+postgres_login_port: "{{ postgres_port }}"
+postgres_login_user: "{{ postgres_init_user }}"
+postgres_login_password: "{{ vault_postgres_standalone_pg_password }}"
+
+# --- Managed PostgreSQL backup ---
+# Полный бекап managed-инстанса (RDS/Cloud SQL/Yandex MDB и т.п.), а не
+# соседнего docker-контейнера. Таска managed_backup не вызывается из
+# tasks/main.yml, ее нужно вызывать отдельным плейбуком через tasks_from.
+postgres_managed_backup_dir: /opt/backups/postgres-managed
+postgres_managed_backup_script_path: /usr/local/bin/postgres_managed_backup.sh
+postgres_managed_log_dir: /var/log/postgres-managed-backup
+
+# Подключение к managed-инстансу. Пароль ожидается в vault-переменной
+# vault_postgres_managed_password (не хранить в defaults!).
+postgres_managed_host: ""
+postgres_managed_port: 5432
+postgres_managed_user: postgres
+
+# Список БД/пользователей, которые нужно создать на managed-инстансе.
+# Формат идентичен postgres_databases: [{user, password, db}, ...]
+# Используется через tasks/managed_add_db.yml (не входит в tasks/main.yml).
+postgres_managed_databases: []
+
+# Служебные базы облачных провайдеров, которые не нужно дампить
+postgres_managed_exclude_databases:
+  - template0
+  - template1
+  - rdsadmin
+  - azure_maintenance
+  - azure_sys
+  - cloudsqladmin
+
+postgres_managed_retention_days: 30
+
+postgres_managed_backup_cron_enabled: true
+postgres_managed_backup_cron:
+  minute: "30"
+  hour: "2"
+  weekday: "*"
+
+# Запустить бекап немедленно при выполнении таски (для ручного/тестового прогона)
+postgres_managed_backup_run_now: false

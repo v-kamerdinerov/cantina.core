@@ -36,3 +36,22 @@
 - Резервное копирование баз данных
 - Слушает на порту 5433 (отлично от стандартного 5432)
 
+Дополнительно роль содержит таски для работы с **managed** PostgreSQL
+инстансом (RDS/Cloud SQL/Yandex MDB и т.п.), а не соседним docker-контейнером.
+Обе таски не входят в основной сценарий роли (tasks/main.yml) и вызываются
+только явно, отдельными плейбуками:
+
+- `managed_backup` (tasks/managed_backup.yml) - полный бекап инстанса:
+  дампятся глобальные объекты и все пользовательские базы целиком.
+  Пример: `playbooks/postgres_managed_backup.yml`.
+- `managed_add_db` (tasks/managed_add_db.yml) - создание БД/пользователей
+  на managed-инстансе по переменной `postgres_managed_databases` (тот же
+  формат, что и `postgres_databases` для локального контейнера).
+  Пример: `playbooks/postgres_managed_databases.yml`.
+
+```yaml
+- import_role:
+    name: cantina.core.postgres
+    tasks_from: managed_backup   # или managed_add_db
+```
+

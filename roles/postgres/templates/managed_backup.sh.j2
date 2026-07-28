@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# --- Настройки ---
+# Полный бекап managed PostgreSQL инстанса: глобальные объекты (роли/права)
+# + дамп КАЖДОЙ пользовательской базы. Запускается от root на хосте,
+# у которого есть сетевой доступ к managed-инстансу.
+DATE="$(date +%Y%m%d_%H%M%S)"
+
+BACKUP_DIR="{{ postgres_managed_backup_dir }}"
+RETENTION_DAYS={{ postgres_managed_retention_days }}
+
+PGHOST="{{ postgres_managed_host }}"
+PGPORT="{{ postgres_managed_port }}"
+PGUSER="{{ postgres_managed_user }}"
+export PGPASSWORD="{{ vault_postgres_managed_password }}"
+
+# Системные/служебные базы, которые пропускаем при переборе
+EXCLUDE_DBS=({{ postgres_managed_exclude_databases | map('quote') | join(' ') }})
+
+TG_BOT_TOKEN="{{ vault_telegram_bot_token }}"
+TG_CHAT_ID="{{ vault_telegram_chat_id }}"
+
+HOSTNAME="$(hostname -f 2>/dev/null || hostname)"
+START_TS="$(date +%s)"
+
+# --- Подготовка ---
+mkdir -p "$BACKUP_DIR"
+WORKDIR="$(mktemp -d)"
+ARCHIVE="$BACKUP_DIR/postgres_managed_backup_${DATE}.tar.gz"
+
+cleanup() {
+  rm -rf "$WORKDIR"
+}
+trap cleanup EXIT
+
+notify_failure() {
+  curl -fsS \
+    -d "chat_id=${TG_CHAT_ID}" \
+    --data-urlencode "text=❌ postgres managed backup FAILED on ${HOSTNAME} (${PGHOST}:${PGPORT}), date: ${DATE}" \
+    "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" >/dev/null || true
+}
+trap notify_failure ERR
+
+is_excluded() {
+  local db="$1"
+  local ex
+  for ex in "${EXCLUDE_DBS[@]}"; do
+    [[ "$db" == "$ex" ]] && return 0
+  done
+  return 1
+}
+
+# --- Дамп глобальных объектов (роли, права, tablespaces) ---
+echo "Dumping globals (roles/grants)..."
+pg_dumpall -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -w --globals-only -f "$WORKDIR/globals.sql"
+
+# --- Список пользовательских баз на инстансе ---
+mapfile -t ALL_DBS < <(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -w -d postgres -tAc \
+  "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname;")
+
+DUMPED_DBS=()
+for db in "${ALL_DBS[@]}"; do
+  if is_excluded "$db"; then
+    echo "Skipping excluded database: ${db}"
+    continue
+  fi
+  echo "Dumping database: ${db}"
+  pg_dump -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -w -Fc -d "$db" -f "$WORKDIR/${db}.dump"
+  DUMPED_DBS+=("$db")
+done
+
+if [ "${#DUMPED_DBS[@]}" -eq 0 ]; then
+  echo "No databases were dumped, aborting." >&2
+  exit 1
+fi
+
+# --- Упаковка всех дампов в один архив ---
+tar -C "$WORKDIR" -czf "$ARCHIVE" .
+
+# --- Ротация (удаляем архивы старше RETENTION_DAYS) ---
+find "$BACKUP_DIR" -type f -name "postgres_managed_backup_*.tar.gz" -mtime +"$RETENTION_DAYS" -delete
+
+# --- Telegram: отправка файла + уведомление ---
+DURATION="$(( $(date +%s) - START_TS ))"
+SIZE_BYTES="$(stat -c%s "$ARCHIVE" 2>/dev/null || wc -c < "$ARCHIVE")"
+DB_LIST="$(IFS=,; echo "${DUMPED_DBS[*]}")"
+
+CAPTION="postgres managed backup (${HOSTNAME} -> ${PGHOST}:${PGPORT})
+date: ${DATE}
+databases: ${DB_LIST}
+size: ${SIZE_BYTES} bytes
+duration: ${DURATION}s"
+
+# Telegram не принимает документы больше 50MB - в этом случае шлём только текст
+MAX_TG_SIZE=$((49 * 1024 * 1024))
+if [ "$SIZE_BYTES" -le "$MAX_TG_SIZE" ]; then
+  curl -fsS \
+    -F "chat_id=${TG_CHAT_ID}" \
+    -F "caption=${CAPTION}" \
+    -F "document=@${ARCHIVE}" \
+    "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument" >/dev/null
+else
+  curl -fsS \
+    -d "chat_id=${TG_CHAT_ID}" \
+    --data-urlencode "text=✅ ${CAPTION}
+(файл больше 49MB, не отправлен в Telegram, лежит на ${HOSTNAME}: ${ARCHIVE})" \
+    "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" >/dev/null
+fi

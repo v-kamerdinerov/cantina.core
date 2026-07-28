@@ -1,0 +1,54 @@
+---
+# Полный бекап managed PostgreSQL инстанса.
+# Не вызывается из tasks/main.yml - используется отдельным плейбуком, например:
+#
+#   - import_role:
+#       name: cantina.core.postgres
+#       tasks_from: managed_backup
+#
+- name: "postgres | managed_backup | Install postgresql-client (pg_dump/pg_dumpall/psql)"
+  ansible.builtin.apt:
+    name: postgresql-client
+    state: present
+    update_cache: true
+
+- name: "postgres | managed_backup | Create backup directory"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  loop:
+    - "{{ postgres_managed_backup_dir }}"
+
+- name: "postgres | managed_backup | Install managed backup script"
+  ansible.builtin.template:
+    src: managed_backup.sh.j2
+    dest: "{{ postgres_managed_backup_script_path }}"
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: "postgres | managed_backup | Ensure cron log directory exists"
+  ansible.builtin.file:
+    path: "{{ postgres_managed_log_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: "postgres | managed_backup | Setup cron for managed postgres backup"
+  ansible.builtin.cron:
+    name: "postgres managed backup"
+    user: root
+    minute: "{{ postgres_managed_backup_cron.minute }}"
+    hour: "{{ postgres_managed_backup_cron.hour }}"
+    weekday: "{{ postgres_managed_backup_cron.weekday }}"
+    job: "{{ postgres_managed_backup_script_path }} >> {{ postgres_managed_log_dir }}/backup.log 2>&1"
+    state: "{{ 'present' if postgres_managed_backup_cron_enabled | bool else 'absent' }}"
+
+- name: "postgres | managed_backup | Run backup right now (ad-hoc)"
+  ansible.builtin.command: "{{ postgres_managed_backup_script_path }}"
+  when: postgres_managed_backup_run_now | bool
+  changed_when: true

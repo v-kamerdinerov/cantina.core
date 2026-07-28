@@ -1,0 +1,36 @@
+---
+# Пример плейбука для полного бекапа managed PostgreSQL инстанса.
+#
+# В отличие от бекапов "соседнего" docker-контейнера (см. tasks/add_db.yml
+# и т.п. в прикладных ролях), здесь бекапится ЦЕЛИКОМ managed-инстанс
+# (RDS/Cloud SQL/Yandex MDB/...) - все базы + глобальные объекты (роли/права).
+#
+# Роль cantina.core.postgres сама эту таску никогда не вызывает из
+# tasks/main.yml - только через явный import_role/include_role с tasks_from.
+#
+# Запуск:
+#   ansible-playbook cantina.core.postgres_managed_backup \
+#     -i inventories/hosts.yml --limit backup_runner
+#
+# Секреты (пароль БД, телеграм-токен) должны приезжать из vault, а не
+# лежать в этом плейбуке или в defaults роли:
+#   vault_postgres_managed_password
+#   vault_telegram_bot_token
+#   vault_telegram_chat_id
+#
+- name: "Полный бекап managed PostgreSQL инстанса"
+  hosts: "postgres_managed_backup"
+  gather_facts: false
+  become: true
+  vars:
+    postgres_managed_host: "my-managed-pg.example.com"
+    postgres_managed_port: 5432
+    postgres_managed_user: "postgres"
+    # postgres_managed_exclude_databases: [...]   # переопределить при необходимости
+    # postgres_managed_backup_run_now: true       # прогнать бекап сразу после setup cron
+  tasks:
+    - name: "Установить скрипт бекапа managed postgres и cron"
+      import_role:
+        name: cantina.core.postgres
+        tasks_from: managed_backup
+      tags: postgres_managed_backup
