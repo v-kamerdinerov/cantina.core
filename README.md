@@ -44,6 +44,25 @@ ansible-galaxy collection install -r requirements.yml
     - cantina.core.postgres
 ```
 
+## Готовые примеры плейбуков
+
+Коллекция содержит директорию `playbooks/` с готовыми примерами - после
+установки коллекции их можно запускать по FQCN, без копирования файлов
+в свой проект:
+
+| Плейбук | Описание |
+|---------|----------|
+| `cantina.core.common` | Базовая настройка хоста (роль `common`) |
+| `cantina.core.docker` | Установка и настройка Docker (роль `docker`) |
+| `cantina.core.caddy` | Развертывание Caddy reverse-proxy (роль `caddy`) |
+| `cantina.core.postgres` | Локальный standalone PostgreSQL в docker-контейнере (роль `postgres`) |
+| `cantina.core.postgres_managed_backup` | Полный бекап managed PostgreSQL инстанса (`postgres` / `managed_backup`) |
+| `cantina.core.postgres_managed_databases` | Создание БД/пользователей на managed-инстансе (`postgres` / `managed_add_db`) |
+
+```bash
+ansible-playbook cantina.core.postgres -i inventories/hosts.yml --limit my_host
+```
+
 ## Разработка
 
 ```bash

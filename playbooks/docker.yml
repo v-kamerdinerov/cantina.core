@@ -1,0 +1,16 @@
+---
+# Базовый пример: установка и настройка Docker + docker compose plugin
+# ролью cantina.core.docker. Обычно применяется после cantina.core.common.
+#
+# Запуск:
+#   ansible-playbook cantina.core.docker -i inventories/hosts.yml --limit my_host
+#
+- name: "Install and configure Docker"
+  hosts: "all"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: "Import docker role"
+      import_role:
+        name: cantina.core.docker
+      tags: docker

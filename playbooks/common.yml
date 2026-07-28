@@ -1,0 +1,16 @@
+---
+# Базовый пример: применить роль cantina.core.common (SSH, пакеты, лимиты,
+# sysctl, ufw) на хосте/группе хостов.
+#
+# Запуск:
+#   ansible-playbook cantina.core.common -i inventories/hosts.yml --limit my_host
+#
+- name: "Base host setup (common)"
+  hosts: "all"
+  gather_facts: false
+  become: true
+  tasks:
+    - name: "Import common role"
+      import_role:
+        name: cantina.core.common
+      tags: common

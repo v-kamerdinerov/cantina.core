@@ -1,0 +1,25 @@
+---
+# Базовый пример: развернуть локальный standalone PostgreSQL в docker-контейнере
+# ролью cantina.core.postgres (не managed-инстанс, см. postgres_managed_*.yml).
+# Требует уже установленный Docker (см. playbooks/docker.yml).
+#
+# Секреты - в vault, а не в этом плейбуке:
+#   vault_postgres_standalone_pg_password
+#
+# Запуск:
+#   ansible-playbook cantina.core.postgres -i inventories/hosts.yml --limit my_host
+#
+- name: "Deploy standalone PostgreSQL"
+  hosts: "all"
+  gather_facts: false
+  become: true
+  vars:
+    postgres_databases:
+      - db: "myapp"
+        user: "myapp"
+        password: "{{ vault_myapp_db_password }}"
+  tasks:
+    - name: "Import postgres role"
+      import_role:
+        name: cantina.core.postgres
+      tags: postgres

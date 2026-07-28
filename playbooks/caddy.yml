@@ -1,0 +1,20 @@
+---
+# Базовый пример: развернуть Caddy как reverse proxy ролью cantina.core.caddy.
+# Обычно применяется после cantina.core.common + cantina.core.docker.
+#
+# Запуск:
+#   ansible-playbook cantina.core.caddy -i inventories/hosts.yml --limit my_host
+#
+- name: "Deploy Caddy reverse proxy"
+  hosts: "all"
+  gather_facts: false
+  become: true
+  vars:
+    caddy_services:
+      - domain: "app.example.com"
+        upstream: "app:8080"
+  tasks:
+    - name: "Import caddy role"
+      import_role:
+        name: cantina.core.caddy
+      tags: caddy
