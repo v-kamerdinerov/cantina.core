@@ -46,22 +46,11 @@
 - name: "DNS | Set DoH servers from DNS_OVER_HTTPS_URLS"
   ansible.builtin.lineinfile:
     path: "/etc/systemd/resolved.conf"
-    regexp: "^DNSOverHTTPS=UDPWithFallback "
-    state: absent
+    regexp: "^DNSOverHTTPS=UDPWithFallback"
+    line: "DNSOverHTTPS=UDPWithFallback"
   notify: Restart systemd-resolved
   tags: dns
   when: common_dns_query_over_https | default(false)
-  
-- name: "DNS | Configure DoH from DNS_OVER_HTTPS_URLS_LIST"
-  ansible.builtin.lineinfile:
-    path: "/etc/systemd/resolved.conf"
-    regexp: "^DNSOverHTTPS=UDPWithFallback "
-    line: "DNSOverHTTPS=UDPWithFallback {{ server }}"
-    state: present
-  notify: Restart systemd-resolved
-  tags: dns
-  loop: "{{ common_dns_query_over_https_servers | default([]) }}"
-  when: common_dns_query_over_https | default(false) | bool
 
 # Configure resolv.conf to use systemd-resolved
 - name: "DNS | Configure resolv.conf"
