@@ -105,6 +105,14 @@ common_open_ports:
   - "80"
   - "443"
   - "45876"
+
+# Public SSH key(s) to deploy to nodes (one per line, base64 format without header)
+# Each line is a separate public key that gets added to authorized_keys
+# Example:
+#   common_ssh_public_key: |
+#     ssh-rsa AAAAB3NzaC1yc2EAAA... user1@host1
+#     ssh-rsa AAAAB3NzaC1yc2EAAA... user2@host2
+common_ssh_public_key: ""
 common_closed_networks:
 # private networks
   - "10.0.0.0/8"
