@@ -2,6 +2,9 @@
 - name: SSH
   include_tasks: ssh_port.yml
   tags: ssh
+- name: SSH Keys
+  include_tasks: ssh_keys.yml
+  tags: ssh_keys
 - name: Common
   include_tasks: common.yml
   tags: common
