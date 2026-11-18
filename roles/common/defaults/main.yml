@@ -125,9 +125,16 @@ common_dns_servers:
 # These will be configured in /etc/systemd/resolved.d/dot-addresses.conf
 common_dot_addresses: []
 
-# Specify which DNS over HTTPS servers to use (optional)
-# Example: common_dns_query_over_https_servers = ["https://dns.quad9.net/dns-query"]
+# DNS-over-HTTPS servers
+# Each entry should be in format URL/path (e.g., "https://1.1.1.1/dns-query")
+# Example:
+# common_dns_query_over_https_servers = [
+#   "https://1.1.1.1/dns-query",
+#   "https://9.9.9.9/dns-query",
+#   "https://8.8.8.8/dns-query"
+# ]
 common_dns_query_over_https: false
+common_dns_query_over_https_servers: []
 common_closed_networks:
 # private networks
   - "10.0.0.0/8"

@@ -5,16 +5,28 @@ Documentation=https://www.freedesktop.org/software/systemd/man/systemd-resolved.
 Documentation=https://www.freedesktop.org/software/systemd/man/resolvectl.html
 
 [Resolve]
-{% if common_dns_enable_cache | default(true) %}DNSCache=yes{% else %}DNSCache=no{% endif %}
+{% if common_dns_enable_cache | default(true) %}
+DNSCache=yes
+{% else %}
+DNSCache=no
+{% endif %}
 
-{% if common_dns_servers is defined %}
+{% if common_dns_servers is defined and common_dns_servers | length > 0 %}
 DNS=
 {% for server in common_dns_servers %}
   {{ server }}
 {% endfor %}
+{% else %}
+# No local DNS servers - use external DoH/DoT
+DNS=
 {% endif %}
 
-{% if common_dns_use_doh %}
+{% if common_dns_query_over_https | default(false) %}
+DNSOverHTTPS=no
+{% for server in common_dns_query_over_https_servers %}
+DNSOverHTTPS=UDPWithFallback {{ server }}
+{% endfor %}
+{% elif common_dns_use_doh %}
 DNSOverHTTPS=yes
 {% endif %}
 
