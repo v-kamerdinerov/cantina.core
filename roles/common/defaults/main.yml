@@ -113,13 +113,6 @@ common_open_ports:
 #     ssh-rsa AAAAB3NzaC1yc2EAAA... user1@host1
 #     ssh-rsa AAAAB3NzaC1yc2EAAA... user2@host2
 common_ssh_public_key: ""
-
-# DNS configuration via systemd-resolved
-common_dns_enabled: true
-common_dns_listen_ports: [53, 853]  # 53 = UDP/TCP DNS, 853 = DNS-over-TLS
-common_dns_use_doh: false  # DNS-over-HTTPS on port 443
-common_dns_servers:
-  - "127.0.0.53"  # systemd-resolved
 common_closed_networks:
 # private networks
   - "10.0.0.0/8"

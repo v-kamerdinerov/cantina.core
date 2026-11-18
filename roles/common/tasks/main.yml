@@ -5,9 +5,6 @@
 - name: SSH Keys
   include_tasks: ssh_keys.yml
   tags: ssh_keys
-- name: DNS
-  include_tasks: dns.yml
-  tags: dns
 - name: Common
   include_tasks: common.yml
   tags: common
