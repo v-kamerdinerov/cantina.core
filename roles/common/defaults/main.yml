@@ -120,6 +120,14 @@ common_dns_listen_ports: [53, 853]  # 53 = UDP/TCP DNS, 853 = DNS-over-TLS
 common_dns_use_doh: false  # DNS-over-HTTPS on port 443
 common_dns_servers:
   - "127.0.0.53"  # systemd-resolved
+
+# DoT DNS server addresses (e.g., tls://dns.quad9.net, tls://dns.comss.one)
+# These will be configured in /etc/systemd/resolved.d/dot-addresses.conf
+common_dot_addresses: []
+
+# Specify which DNS over HTTPS servers to use (optional)
+# Example: common_dns_query_over_https_servers = ["https://dns.quad9.net/dns-query"]
+common_dns_query_over_https: false
 common_closed_networks:
 # private networks
   - "10.0.0.0/8"

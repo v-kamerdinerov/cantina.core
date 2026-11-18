@@ -26,17 +26,31 @@
     regexp: "^ListenStub="
     line: "ListenStub=127.0.0.53:53 127.0.0.53:853"
   notify: Restart systemd-resolved
-  when: "'853' in common_dns_listen_ports | default([53])"
+  when: common_dns_listen_ports | default([53]) | length > 1
   tags: dns
 
-- name: "DNS | Configure DoH port 443"
-  ansible.builtin.lineinfile:
-    path: "/etc/systemd/resolved.conf"
-    regexp: "^DNSOverHTTPS="
-    line: "DNSOverHTTPS=yes"
+# Configure DNS-over-TLS external servers
+- name: "DNS | Set DoT server addresses from DoT_ADDRESSES"
+  ansible.builtin.template:
+    src: "templates/dot_addresses.conf.j2"
+    dest: "/etc/systemd/resolved.d/dot-addresses.conf"
+    mode: '0644'
+    owner: root
+    group: root
+    backup: true
   notify: Restart systemd-resolved
   tags: dns
-  when: common_dns_use_doh | default(false)
+  when: common_dot_addresses is defined and common_dot_addresses | length > 0
+
+# Configure DNS-over-HTTPS (DoH) servers
+- name: "DNS | Set DoH servers from DNS_OVER_HTTPS_URLS"
+  ansible.builtin.lineinfile:
+    path: "/etc/systemd/resolved.conf"
+    regexp: "^DNSOverHTTPS=UDPWithFallback"
+    line: "DNSOverHTTPS=UDPWithFallback"
+  notify: Restart systemd-resolved
+  tags: dns
+  when: common_dns_query_over_https | default(false)
 
 # Configure resolv.conf to use systemd-resolved
 - name: "DNS | Configure resolv.conf"
