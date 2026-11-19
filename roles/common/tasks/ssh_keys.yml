@@ -1,27 +1,10 @@
 ---
-# Only proceed with SSH keys if a public key is provided
-- name: "Common | SSH Keys | Skip if no public key provided"
-  ansible.builtin.assert:
-    that:
-      - common_ssh_public_key is defined
-      - common_ssh_public_key | length > 0
-    fail_msg: "common_ssh_public_key is required but not defined"
-    success_msg: "SSH public key(s) is/are provided"
-  tags: ssh_keys
-  when: common_ssh_public_key is not defined or common_ssh_public_key | length == 0
-
-# Ensure auth directory exists
-- name: "Common | SSH Keys | Ensure auth directory exists"
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.ssh"
-    state: directory
-    mode: '0700'
-  tags: ssh_keys
-
-# Add SSH public key to authorized_keys
-- name: "Common | SSH Keys | Add public key to authorized_keys"
+# Deploy SSH public key(s) to authorized_keys. Optional: no-op when
+# common_ssh_public_key is empty.
+- name: "Common | SSH Keys | Add public key(s) to authorized_keys"
   ansible.posix.authorized_key:
     user: "{{ ansible_user_id }}"
     key: "{{ common_ssh_public_key }}"
     state: present
+  when: common_ssh_public_key | default('') | length > 0
   tags: ssh_keys
