@@ -113,6 +113,53 @@ common_open_ports:
 #     ssh-rsa AAAAB3NzaC1yc2EAAA... user1@host1
 #     ssh-rsa AAAAB3NzaC1yc2EAAA... user2@host2
 common_ssh_public_key: ""
+
+# DNS configuration via systemd-resolved.
+# Only "udp" and "dot" are supported - systemd-resolved has no DNS-over-HTTPS support.
+common_dns_enabled: false
+common_dns_mode: "udp"  # udp | dot
+common_dns_cache: true
+common_dns_fallback_servers: []
+
+# List of DNS servers:
+#   - udp mode: plain "IP[:port]" entries
+#   - dot mode: "IP#servername" entries, so systemd-resolved can validate
+#     the certificate and send SNI (see DNS= in resolved.conf(5))
+# Examples below were checked for reachability from CP-IDENTITY on 2026-11-19
+# (IPv6 addresses were not checked - that node has no IPv6 route):
+#
+# common_dns_mode: udp
+# common_dns_servers:
+#   - "193.233.112.67"
+#   - "193.233.112.88"
+#   - "37.230.192.51"
+#   - "5.175.161.3"
+#   - "5.175.161.40"
+#   - "37.221.93.141"
+#   - "37.221.93.128"
+#   - "45.13.237.213"
+#   - "31.25.239.132"
+#   - "143.20.64.192"
+#   - "192.255.159.240"
+#   - "192.255.159.241"
+#   - "192.3.233.253"
+#   - "107.175.76.134"
+#   - "179.254.166.171"  # dns.malw.link
+#   - "164.5.224.81"  # dns.malw.link
+#   - "2a12:bec4:1bb0:27dd::2"  # dns.malw.link, IPv6, not checked
+#   - "2a13:82c0:0:d::3"  # dns.malw.link, IPv6, not checked
+#
+# common_dns_mode: dot
+# common_dns_servers:
+#   - "5.175.161.3#eu.geohide.ru"
+#   - "45.13.237.213#eu.geohide.ru"
+#   - "5.175.161.40#eu.geohide.ru"
+#   - "164.5.224.81#dns.malw.link"
+#   - "179.254.166.171#dns.malw.link"
+#   - "162.159.36.5#5u35p8m9i7.cloudflare-gateway.com"
+#   - "162.159.36.20#5u35p8m9i7.cloudflare-gateway.com"
+common_dns_servers: []
+
 common_closed_networks:
 # private networks
   - "10.0.0.0/8"

@@ -1,0 +1,7 @@
+[Resolve]
+DNS={{ common_dns_servers | join(' ') }}
+{% if common_dns_fallback_servers | length > 0 %}
+FallbackDNS={{ common_dns_fallback_servers | join(' ') }}
+{% endif %}
+DNSOverTLS={{ 'yes' if common_dns_mode == 'dot' else 'no' }}
+Cache={{ 'yes' if common_dns_cache | bool else 'no' }}

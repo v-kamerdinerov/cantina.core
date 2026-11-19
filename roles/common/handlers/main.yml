@@ -1,3 +1,8 @@
 ---
 # handlers for role: common
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
 ...

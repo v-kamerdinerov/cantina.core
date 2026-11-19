@@ -1,0 +1,57 @@
+---
+# DNS configuration via systemd-resolved (UDP or DNS-over-TLS).
+# systemd-resolved has no DNS-over-HTTPS support, so only "udp" and "dot" modes exist.
+
+- name: "Common | DNS | Validate common_dns_mode"
+  ansible.builtin.assert:
+    that:
+      - common_dns_mode in ['udp', 'dot']
+    fail_msg: "common_dns_mode must be 'udp' or 'dot'"
+  when: common_dns_enabled | bool
+  tags: dns
+
+- name: "Common | DNS | Ensure resolved.conf.d directory exists"
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: common_dns_enabled | bool
+  tags: dns
+
+- name: "Common | DNS | Configure systemd-resolved drop-in"
+  ansible.builtin.template:
+    src: resolved-dns.conf.j2
+    dest: /etc/systemd/resolved.conf.d/90-dns.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart systemd-resolved
+  when: common_dns_enabled | bool
+  tags: dns
+
+- name: "Common | DNS | Remove systemd-resolved drop-in when disabled"
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d/90-dns.conf
+    state: absent
+  notify: Restart systemd-resolved
+  when: not (common_dns_enabled | bool)
+  tags: dns
+
+- name: "Common | DNS | Enable systemd-resolved service"
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    enabled: true
+    state: started
+  when: common_dns_enabled | bool
+  tags: dns
+
+- name: "Common | DNS | Point /etc/resolv.conf to systemd-resolved stub"
+  ansible.builtin.file:
+    src: /run/systemd/resolve/stub-resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true
+  when: common_dns_enabled | bool
+  tags: dns
