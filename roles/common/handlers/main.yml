@@ -1,6 +1,16 @@
 ---
 # handlers for role: common
 
+- name: Restart sshd
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+
+- name: restart firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: restarted
+
 - name: Restart systemd-resolved
   ansible.builtin.systemd:
     name: systemd-resolved
